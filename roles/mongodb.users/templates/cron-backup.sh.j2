@@ -1,0 +1,6 @@
+#!/bin/bash
+
+DATE=$(date '+%Y-%m-%d')
+mongodump --host {{ groups['rs0'] | map("regex_replace", "(.*)", "\\1:27017") | join(",") }} --db {{ mongodb_main_database }} --authenticationDatabase admin --ssl --username {{ backup_db_user_name }} --password {{ backup_db_user_password }} --out ~/backup/dump
+tar -czvf $DATE.tar.gz -C ~/backup/dump
+rm -rf ~/backup

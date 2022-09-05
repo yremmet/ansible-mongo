@@ -1,0 +1,44 @@
+---
+  - ansible.builtin.import_role:
+      name: mongodb.vault_user
+    vars:
+      user: "{{item.name}}"
+      database: "{{item.database}}"
+    when: "{{use_vault}}"
+  - set_fact:
+      mongodb_user: "{{item.name}}"
+      mongodb_pwd: "{{item.pwd}}"
+    when: "{{not use_vault}}"
+  - block: 
+          - name: Get Replicaset Status
+            community.mongodb.mongodb_status:
+              replica_set: "{{repl_set_name}}"
+              login_database: admin
+              login_user: "{{mongodb_admin_user}}"
+              login_password: "{{mongodb_admin_pwd}}"
+              login_host: "{{ groups['mongodb'][0] }}"
+              ssl: true
+              ssl_ca_certs: "{{mongodb_certificate_ca_file}}"
+              ssl_certfile: "{{mongodb_certificate_key_file}}"
+              ssl_keyfile: "{{mongodb_certificate_key_file}}"
+            register: rs
+
+          - set_fact:
+              primary: "{{ item.key.split('.')[0] }}"
+            loop: "{{ lookup('dict', rs.replicaset) }}"
+            when: "not rs.failed and 'PRIMARY' in item.value"
+
+          - name: Create User User
+            community.mongodb.mongodb_user:
+              login_database: admin
+              login_user: admin
+              login_password: admin
+              login_host: "{{primary}}"
+              ssl: true
+              ssl_ca_certs: "{{mongodb_certificate_ca_file}}"
+              ssl_certfile: "{{mongodb_certificate_key_file}}"
+              ssl_keyfile: "{{mongodb_certificate_key_file}}"
+              database: "{{item.database}}"
+              user: "{{mongodb_user}}"
+              password: "{{mongodb_pwd}}"
+              roles: "{{item.roles}}"

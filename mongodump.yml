@@ -1,0 +1,4 @@
+- hosts: rs0[0]
+  become: yes
+  roles:
+  - backup

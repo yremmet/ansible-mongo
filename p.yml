@@ -1,0 +1,12 @@
+
+- hosts: mongodb
+  become: yes
+  roles:
+          #    - prepare_host
+          #- community.mongodb.mongodb_linux
+          #- community.mongodb.mongodb_repository
+          #- community.mongodb.mongodb_selinux
+          #- community.mongodb.mongodb_mongod
+    - name: mongodb.replicaset
+      when: replicaset
+    - users

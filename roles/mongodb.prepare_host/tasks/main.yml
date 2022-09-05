@@ -1,0 +1,7 @@
+---
+- name: Install pymongo
+  pip:
+    name: pymongo==3.12.2
+- name: Install hvac
+  pip:
+          name: hvac

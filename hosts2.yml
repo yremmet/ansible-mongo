@@ -1,0 +1,36 @@
+all:
+    hosts:
+    # None
+    children:
+        mongodb:
+          children:
+            rs0:
+              hosts:
+                sl-003293.sol.labwi.sva.de:
+                sl-003292.sol.labwi.sva.de:
+                  arbiter: true
+                sl-003294.sol.labwi.sva.de:
+              vars:
+                repl_set_name: rs1
+                mongodb_admin_user: admin
+                mongodb_admin_pwd: admin
+                replicaset: true
+                users:
+                - name: user1
+                  password: password1
+                  database: db1
+                  roles:
+                  - readWrite
+                - name: user2
+                  password: password2
+                  database: db1
+                  roles:
+                  - read
+    vars:
+        ansible_become_method: sudo
+        mongodb_use_tls: true
+        net_compressors: zlib,snappy
+        mongod_config_template: mongod-custom.conf.j2 
+        mongodb_certificate_key_file: /opt/mongo/mongod.pem
+        mongodb_certificate_ca_file: /opt/mongo/ca.pem
+

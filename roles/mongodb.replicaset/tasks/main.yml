@@ -1,0 +1,28 @@
+---
+- block: 
+  - ansible.builtin.import_role:
+      name: mongodb.vault_user
+    vars:
+      user: admin
+      database: admin
+
+  - set_fact:
+      mongodb_admin_user: "{{ mongodb_user }}"
+      mongodb_admin_pwd: "{{ mongodb_pwd }}"
+
+  when: "{{use_vault}}"
+- set_fact:
+    mongodb_main_grp: "{{group_names[0]}}"
+     #- set_fact:
+        # subgroups_unfiltered: "{{ subgroups_unfiltered|default([])|unique + hostvars[item].group_names }}"
+    #loop: "{{ groups[mongodb_main_grp] }}"
+  #- set_fact:
+  #   subgroup: "{{ subgroups_unfiltered|unique|difference([mongodb_main_grp]) }}"
+- debug:
+    var: subgroups
+- include: rs.yml
+  vars:
+    mongod_group: "{{ item }}" 
+  when: inventory_hostname in groups[item]
+  loop: 
+  - "{{mongodb_main_grp}}" 

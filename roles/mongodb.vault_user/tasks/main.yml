@@ -1,0 +1,33 @@
+---
+- name: "Get {{user}} from {{database}}"
+  block:
+   - name: Get Credentials 
+     community.hashi_vault.vault_read:
+       path: "{{vault_root_path}}/{{database}}/{{user}}"
+     register: _secret
+     delegate_to: localhost
+     run_once: true
+     become: false
+
+   - set_fact:
+      mongodb_user: "{{_secret.data.data.username}}" 
+      mongodb_pwd: "{{_secret.data.data.password}}" 
+     delegate_to: localhost
+     run_once: true
+     become: false
+  rescue:
+   - set_fact:
+      mongodb_user: "{{user}}" 
+      mongodb_pwd: "{{ lookup('ansible.builtin.password', '/tmp/passwordfile length=32 chars=ascii_letters,digits,punctuation') }}" 
+     delegate_to: localhost
+     run_once: true
+     become: false
+   - name: Store new User Credentilas
+     community.hashi_vault.vault_write:
+       path: "{{vault_root_path}}/{{database}}/{{user}}"
+       data:
+         username: "{{mongodb_user}}"
+         password: "{{mongodb_pwd}}"
+     delegate_to: localhost
+     run_once: true
+     become: false

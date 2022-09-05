@@ -1,0 +1,51 @@
+
+- name: Get Replicaset Status
+  community.mongodb.mongodb_status:
+    replica_set: "rs0"
+    login_database: admin
+    login_user: admin
+    login_password: admin
+    login_host: sl-002819.sol.labwi.sva.de
+    ssl: yes
+    ssl_ca_certs: "{{ mongodb_certificate_ca_file }}"
+    ssl_certfile: "{{ mongodb_certificate_cert_file }}"
+    ssl_keyfile: "{{mongodb_certificate_key_file}}"
+  register: rs
+
+- set_fact:
+    primary: "{{ item.key.split('.')[0] }}"
+  loop: "{{ lookup('dict', rs.replicaset) }}"
+  when: "'PRIMARY' in item.value"
+
+
+- name: Create Backup User
+  community.mongodb.mongodb_user:
+    login_database: admin
+    login_user: admin
+    login_password: admin
+    login_host: "{{primary}}.sol.labwi.sva.de"
+    ssl: yes
+    ssl_ca_certs: "{{ mongodb_certificate_ca_file }}"
+    ssl_certfile: "{{ mongodb_certificate_cert_file }}"
+    ssl_keyfile: "{{mongodb_certificate_key_file}}"
+    database: admin
+    user: "{{backup_db_user_name}}"
+    password: "{{backup_db_user_password}}"
+    roles:
+    - readAnyDatabase
+      
+
+- name: Add cron job file
+  template:
+    src: cron-backup.sh.j2
+    dest: /opt/mongo/cron-backup.sh
+    owner: root
+    mode: '0700'
+
+- name: Create backup cronjob
+  cron:
+    name: "Backup Cronjob"
+    minute: "{{ backup_minute }}"
+    hour: "{{ backup_hour }}"
+    user: "root"
+    job: "sh /opt/mongo/cron-backup.sh"

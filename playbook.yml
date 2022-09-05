@@ -1,0 +1,44 @@
+- hosts: mongodb
+  become: yes
+  tasks:
+  - name: creating users
+    user: 
+      name: mongod
+      state: present
+
+  - name: Create SSL Dir
+    file:
+      path: /opt/mongo/
+      state: directory
+      mode: 0770
+      group: mongod
+      owner: mongod
+  - name: Copy CA SSL Cert
+    copy:
+      src: ca.pem
+      dest: /opt/mongo/
+      mode: 0770
+      owner: mongod
+      group: mongod
+  - name: Copy Host Pem
+    copy: 
+      src: "{{ansible_hostname}}.pem"
+      dest: /opt/mongo/mongod.pem
+      mode: 0770
+      owner: mongod
+      group: mongod
+
+  - debug:
+      var: mongodb_use_tls
+
+- hosts: mongodb
+  become: yes
+  roles:
+    - mongodb.prepare_host
+    - community.mongodb.mongodb_linux
+    - community.mongodb.mongodb_repository
+    - community.mongodb.mongodb_selinux
+    - community.mongodb.mongodb_mongod
+    - name: mongodb.replicaset
+      when: replicaset
+    - mongodb.users
